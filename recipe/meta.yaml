@@ -38,8 +38,9 @@ test:
     - pip
 
 about:
-  home: https://github.com/unslothai/cut_cross_entropy
+  home: https://github.com/unslothai/cut-cross-entropy
   license: LicenseRef-Apple
+  license_family: OTHER
   license_file: LICENSE
   summary: A memory efficient implementation of linear-cross-entropy loss.
   description: |
@@ -48,8 +49,8 @@ about:
     computes the cross-entropy loss without materializing the full logits
     matrix in global memory, using custom Triton kernels, which substantially
     reduces memory usage during training.
-  doc_url: https://github.com/unslothai/cut_cross_entropy
-  dev_url: https://github.com/unslothai/cut_cross_entropy
+  doc_url: https://github.com/unslothai/cut-cross-entropy
+  dev_url: https://github.com/unslothai/cut-cross-entropy
 
 extra:
   skip-lints:
