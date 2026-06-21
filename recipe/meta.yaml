@@ -13,9 +13,7 @@ build:
   number: 0
   # triton (a hard runtime dep on Linux) is only available on linux-64 on pkgs/main
   skip: true  # [not linux64]
-  script:
-    - export SETUPTOOLS_SCM_PRETEND_VERSION={{ version }}
-    - {{ PYTHON }} -m pip install . --no-deps --no-build-isolation -vv
+  script: {{ PYTHON }} -m pip install . --no-deps --no-build-isolation -vv
 
 requirements:
   host:
