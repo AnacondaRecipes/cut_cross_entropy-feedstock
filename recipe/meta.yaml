@@ -6,15 +6,20 @@ package:
   version: {{ version }}
 
 source:
-  url: https://pypi.org/packages/source/{{ name[0] }}/{{ name }}/cut_cross_entropy-{{ version }}.tar.gz
-  sha256: 5fe5924509248b1aea5c890f8887c6a7759f7c8b1ebc0490e42c247c4f7c1e34
+  - url: https://pypi.org/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
+    sha256: 5fe5924509248b1aea5c890f8887c6a7759f7c8b1ebc0490e42c247c4f7c1e34
+  # LICENSE defers third-party notices (e.g. Triton's MIT notice for tl_autotune.py) to
+  # ACKNOWLEDGEMENTS.md, which the sdist omits. Pinned to the repo head at the 25.1.1 upload.
+  - url: https://raw.githubusercontent.com/unslothai/cut-cross-entropy/65643289d657d07f34ed57f8038c0ada205523e6/ACKNOWLEDGEMENTS.md
+    sha256: 2fececc3e8819466cc24ec67e6b31d78e9be708671b5bb38ac18006f0cee929c
+    folder: notices
 
 build:
   number: 1
-  # Windows: the package imports its Triton kernels on every non-Darwin platform, but triton is
-  # Linux-only. osx-64: pkgs/main pytorch stops at 2.6. osx-arm64 uses the torch.compile path.
-  # linux-aarch64 triton has no py3.10 build.
-  skip: true  # [win or (osx and x86_64) or (aarch64 and py<311)]
+  # Windows: the Triton kernels are imported on every non-Darwin platform, but triton is Linux-only.
+  # osx-64: pkgs/main pytorch is frozen at 2.6 (no py3.14), and accelerate/peft have no osx-64 builds.
+  # linux-aarch64 triton has no py3.10 build. Upstream requires-python is >=3.10.
+  skip: true  # [py<310 or win or (osx and x86_64) or (aarch64 and py<311)]
   script: {{ PYTHON }} -m pip install . --no-deps --no-build-isolation -vv
 
 requirements:
@@ -23,25 +28,37 @@ requirements:
     - pip
     - setuptools >=61.0
     - setuptools-scm
-    - wheel
   run:
     - python
     - pytorch
     - triton  # [linux]
+  # Bounded, non-dev extras from pyproject.toml [project.optional-dependencies]
+  run_constrained:
+    - transformers >=4.44.2
+    - accelerate >=0.34.2
+    - datasets >=3.1.0
+    - huggingface_hub >=0.26.2
+    - deepspeed >=0.15.1  # [not osx]
 
 test:
   imports:
     - cut_cross_entropy
   commands:
     - pip check
+    # Darwin uses the torch.compile implementation: check loss and gradients against plain PyTorch.
+    - python -c "import torch; from cut_cross_entropy import linear_cross_entropy as lce; e = torch.randn(16, 8, requires_grad=True); c = torch.randn(32, 8, requires_grad=True); t = torch.randint(0, 32, (16,)); l = lce(e, c, t, impl='torch_compile'); r = torch.nn.functional.cross_entropy(e @ c.T, t); assert torch.allclose(l, r, atol=1e-5), (l, r); g = torch.autograd.grad(l, (e, c)); h = torch.autograd.grad(r, (e, c)); assert all(torch.allclose(a, b, atol=1e-5) for a, b in zip(g, h))"  # [osx]
   requires:
     - pip
+    # torch.compile (inductor) builds C++ kernels at runtime
+    - {{ compiler('cxx') }}  # [osx]
 
 about:
   home: https://github.com/unslothai/cut-cross-entropy
   license: LicenseRef-Apple
   license_family: OTHER
-  license_file: LICENSE
+  license_file:
+    - LICENSE
+    - notices/ACKNOWLEDGEMENTS.md
   summary: A memory efficient implementation of linear-cross-entropy loss.
   description: |
     Cut Cross-Entropy (CCE) is a memory-efficient implementation of the
