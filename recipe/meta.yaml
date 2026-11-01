@@ -10,9 +10,11 @@ source:
   sha256: 5fe5924509248b1aea5c890f8887c6a7759f7c8b1ebc0490e42c247c4f7c1e34
 
 build:
-  number: 0
-  # triton (a hard runtime dep on Linux) is only available on linux-64 on pkgs/main
-  skip: true  # [not linux64]
+  number: 1
+  # Windows: the package imports its Triton kernels on every non-Darwin platform, but triton is
+  # Linux-only. osx-64: pkgs/main pytorch stops at 2.6. osx-arm64 uses the torch.compile path.
+  # linux-aarch64 triton has no py3.10 build.
+  skip: true  # [win or (osx and x86_64) or (aarch64 and py<311)]
   script: {{ PYTHON }} -m pip install . --no-deps --no-build-isolation -vv
 
 requirements:
@@ -25,7 +27,7 @@ requirements:
   run:
     - python
     - pytorch
-    - triton
+    - triton  # [linux]
 
 test:
   imports:

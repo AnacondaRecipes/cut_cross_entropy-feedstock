@@ -1,0 +1,4 @@
+# TEMPORARY: triton 3.9.0 for linux-aarch64 (triton-feedstock#20, PKG-19528) is not on
+# pkgs/main yet. Remove before merge, once it is released.
+channels:
+  - https://package-build.internal.anaconda.com/pkg-orchestrator/v1/channels/graphs/6fbe4ac5-5a89-4865-bdd8-683dad46191c
